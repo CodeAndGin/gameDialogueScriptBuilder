@@ -1,7 +1,7 @@
 # Script Writer for Lughnasadh - TODO: including pronoun choice markers
 # Diarmaid Brennan - 2021
 #
-# Version 0.2
+# Version 0.4
 
 ### IMPORTS ###
 
@@ -68,7 +68,7 @@ nameCurrent = ""
 dialogueCurrentLine = ""
 
 textInputLayout =      [[gui.Text("Character name:")],
-                        [gui.InputText(nameCurrent, size=(30,1),enable_events=True, k="_NAME_INPUT_"), gui.DropDown(names, size=(20,1), enable_events=True, k="_NAME_LIST_")],
+                        [gui.InputText(nameCurrent, size=(30,1),enable_events=True, k="_NAME_INPUT_"), gui.Combo(names, size=(20,1), enable_events=True, k="_NAME_LIST_")],
                         [gui.Text("Line(s) of dialogue:")],
                         [gui.Multiline(dialogueCurrentLine, autoscroll=True, size=(50,5), auto_refresh=True, enable_events=True, key="_DIALOG_INPUT_")],
                         [gui.Button("Confirm", key="_DIALOG_ENTERED_"), gui.Button("New", key= "_INPUT_RESET_")]]
@@ -76,7 +76,7 @@ textInputLayout =      [[gui.Text("Character name:")],
 outputLayout =         [[gui.Listbox(values=[],enable_events=True,size=(50,30),k="_SCRIPT_LAYOUT_")],
                         [gui.Text("Filename (no need to include the filetype ending):")],
                         [gui.InputText(filename, enable_events=True, k="FILENAME")],
-                        [gui.Button("Edit Selected", k= "EDIT"), gui.Button("Save to JSON",k="PJSON")]]
+                        [gui.Button("Edit Selected", k= "EDIT"), gui.Button("Save to JSON",k="PJSON"), gui.Button("CLEAR ALL", k="CLEAR_ALL")]]
 
 layout= [[gui.Column(textInputLayout)],
          [gui.HorizontalSeparator()],
@@ -112,8 +112,9 @@ def updateScript(i):
 def updateNames():
     names = []
     for a in actors:
-        names.append([a.name])
-    window["_NAME_LIST_"].update(names)
+        names.append(a.name)
+    print(names)
+    window["_NAME_LIST_"].update(values=names)
 
 def fixActorList(i, correct):
     for a in actors:
@@ -198,6 +199,25 @@ while True:
 
     if event == gui.WIN_CLOSED:
         break
+
+    if event == "CLEAR_ALL":
+        actors = [] # List of each character in the conversation
+        index = 0 # Keeps track of how many lines and their correct places
+        tempindex = 0
+        names = []
+        filename = ""
+        script=[]
+        nameCurrent = ""
+        dialogueCurrentLine = ""
+        resetInputBoxes("", "")
+        updateNames()
+        window["_SCRIPT_LAYOUT_"].update(script)
+        window["FILENAME"].update("")
+
+
+    if event == "_NAME_LIST_":
+        window["_NAME_INPUT_"].update(values["_NAME_LIST_"])
+        nameCurrent = values["_NAME_LIST_"]
 
     if event == "_INPUT_RESET_":
         resetInputBoxes("","")
