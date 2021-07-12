@@ -33,7 +33,7 @@ class Actor:
             self.dialogue.append(d)
             self.indices.append(i)
         else:
-            self.dialogue[indices.index(i)] = d
+            self.dialogue[self.indices.index(i)] = d
 
     # Returns the name of the character stored in a given object
     def get_name(self):
@@ -62,16 +62,21 @@ filename = "" # For naming dialogue files
 layout = [] # List for GUI layout
 windowTitle = "Game Dialogue Script Builder" # str for window windowTitle
 
-nameCurrent = "Speaker"
-dialogueCurrentLine = "Enter the new line of dialogue (Don't forget to delete this text)"
+script = []
 
-textInputLayout =      [[gui.InputText(nameCurrent, enable_events=True, k="_NAME_INPUT_"), gui.DropDown(names)],
+nameCurrent = ""
+dialogueCurrentLine = ""
+
+textInputLayout =      [[gui.Text("Character name:")],
+                        [gui.InputText(nameCurrent, size=(30,1),enable_events=True, k="_NAME_INPUT_"), gui.DropDown(names, size=(20,1), enable_events=True, k="_NAME_LIST_")],
+                        [gui.Text("Line(s) of dialogue:")],
                         [gui.Multiline(dialogueCurrentLine, autoscroll=True, size=(50,5), auto_refresh=True, enable_events=True, key="_DIALOG_INPUT_")],
                         [gui.Button("Confirm", key="_DIALOG_ENTERED_")]]
 
 outputLayout =         [[gui.Listbox(values=[],enable_events=True,size=(50,30),k="_SCRIPT_LAYOUT_")],
+                        [gui.Text("Filename (no need to include the filetype ending):")],
                         [gui.InputText(filename, enable_events=True, k="FILENAME")],
-                        [gui.Button("Edit Selected"), gui.Button("Save to JSON",k="PJSON")]]
+                        [gui.Button("Edit Selected", k= "EDIT"), gui.Button("Save to JSON",k="PJSON")]]
 
 layout= [[gui.Column(textInputLayout)],
          [gui.HorizontalSeparator()],
@@ -82,6 +87,49 @@ layout= [[gui.Column(textInputLayout)],
 ### FUNCTIONS ###
 
 ## GUI USABILITY AND TEXT PARSING ##
+
+def resetInputBoxes(name, dialogue):
+    nameCurrent = ""
+    dialogueCurrentLine = ""
+    window["_NAME_INPUT_"].update(name)
+    window["_DIALOG_INPUT_"].update(dialogue)
+
+def updateScript(i):
+    for a in actors:
+        if i in a.indices:
+            sl = a.name + ": " + a.dialogue[a.indices.index(i)]
+            print(script)
+            print(sl)
+            print(i)
+            try:
+                print(script[i]==sl)
+                if script[i] == sl:
+                    break
+            except:
+                print("except")
+            if i == index:
+                script.append(sl)
+            else:
+                script[i] = sl
+            break
+    print(script)
+    window["_SCRIPT_LAYOUT_"].update(script)
+
+def updateNames():
+    names = []
+    for a in actors:
+        names.append([a.name])
+    window["_NAME_LIST_"].update(names)
+
+def fixActorList(i, correct):
+    for a in actors:
+        if i in a.indices:
+            if a.name != correct.name:
+                a.dialogue.pop(a.indices.index(i))
+                a.indices.pop(a.indices.index(i))
+                if len(a.dialogue) == 0:
+                    actors.pop(actors.index(a))
+
 
 ## GUI USABILITY AND TEXT PARSING ENDS ##
 
@@ -149,7 +197,6 @@ def print_to_json():
 
 ## EVENT LOOP ##
 
-
 window = gui.Window(windowTitle, layout, margins=(20,20))
 
 while True:
@@ -157,6 +204,22 @@ while True:
 
     if event == gui.WIN_CLOSED:
         break
+
+    if event == "EDIT":
+        n = ""
+        d = ""
+        tempindex = script.index(values["_SCRIPT_LAYOUT_"][0])
+        for a in actors:
+            if tempindex in a.indices:
+                n = a.name
+                d = a.dialogue[a.indices.index(tempindex)]
+        nameCurrent=n
+        dialogueCurrentLine=d
+        window["_NAME_INPUT_"].update(n)
+        window["_DIALOG_INPUT_"].update(d)
+
+    if event == "_NAME_INPUT_":
+        nameCurrent = values["_NAME_INPUT_"]
 
     if event == "_DIALOG_INPUT_":
         dialogueCurrentLine = values["_DIALOG_INPUT_"]
@@ -179,11 +242,18 @@ while True:
         d = dialogueCurrentLine
         actors[aindex].add_dialogue(d, tempindex)
 
+        resetInputBoxes("","")
+        updateNames()
+        updateScript(tempindex)
+        fixActorList(tempindex, actors[aindex])
+
+
         if tempindex == index:
             index+=1
             tempindex=index
         else:
             tempindex=index
+
 
     if event == "PJSON":
         print_to_json()
