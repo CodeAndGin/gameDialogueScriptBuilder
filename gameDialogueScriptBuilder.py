@@ -71,7 +71,7 @@ textInputLayout =      [[gui.Text("Character name:")],
                         [gui.InputText(nameCurrent, size=(30,1),enable_events=True, k="_NAME_INPUT_"), gui.DropDown(names, size=(20,1), enable_events=True, k="_NAME_LIST_")],
                         [gui.Text("Line(s) of dialogue:")],
                         [gui.Multiline(dialogueCurrentLine, autoscroll=True, size=(50,5), auto_refresh=True, enable_events=True, key="_DIALOG_INPUT_")],
-                        [gui.Button("Confirm", key="_DIALOG_ENTERED_")]]
+                        [gui.Button("Confirm", key="_DIALOG_ENTERED_"), gui.Button("New", key= "_INPUT_RESET_")]]
 
 outputLayout =         [[gui.Listbox(values=[],enable_events=True,size=(50,30),k="_SCRIPT_LAYOUT_")],
                         [gui.Text("Filename (no need to include the filetype ending):")],
@@ -89,8 +89,6 @@ layout= [[gui.Column(textInputLayout)],
 ## GUI USABILITY AND TEXT PARSING ##
 
 def resetInputBoxes(name, dialogue):
-    nameCurrent = ""
-    dialogueCurrentLine = ""
     window["_NAME_INPUT_"].update(name)
     window["_DIALOG_INPUT_"].update(dialogue)
 
@@ -98,15 +96,11 @@ def updateScript(i):
     for a in actors:
         if i in a.indices:
             sl = a.name + ": " + a.dialogue[a.indices.index(i)]
-            print(script)
-            print(sl)
-            print(i)
             try:
-                print(script[i]==sl)
                 if script[i] == sl:
                     break
             except:
-                print("except")
+                pass
             if i == index:
                 script.append(sl)
             else:
@@ -205,6 +199,12 @@ while True:
     if event == gui.WIN_CLOSED:
         break
 
+    if event == "_INPUT_RESET_":
+        resetInputBoxes("","")
+        nameCurrent = ""
+        dialogueCurrentLine = ""
+        tempindex = index
+
     if event == "EDIT":
         n = ""
         d = ""
@@ -230,30 +230,32 @@ while True:
     if event == "_DIALOG_ENTERED_":
         exists = False
         a = nameCurrent
-        for actor in actors:
-            if actor.get_name() == a:
-                exists = True
-                a = actor
-                break
-        if not exists:
-            a = Actor(a)
-            actors.append(a)
-        aindex = actors.index(a)
         d = dialogueCurrentLine
-        actors[aindex].add_dialogue(d, tempindex)
+        if not (a == d == ""):
+            for actor in actors:
+                if actor.get_name() == a:
+                    exists = True
+                    a = actor
+                    break
+            if not exists:
+                a = Actor(a)
+                actors.append(a)
+            aindex = actors.index(a)
 
-        resetInputBoxes("","")
-        updateNames()
-        updateScript(tempindex)
-        fixActorList(tempindex, actors[aindex])
+            actors[aindex].add_dialogue(d, tempindex)
 
+            resetInputBoxes("","")
+            updateNames()
+            updateScript(tempindex)
+            fixActorList(tempindex, actors[aindex])
+            nameCurrent = ""
+            dialogueCurrentLine = ""
 
-        if tempindex == index:
-            index+=1
-            tempindex=index
-        else:
-            tempindex=index
-
+            if tempindex == index:
+                index+=1
+                tempindex=index
+            else:
+                tempindex=index
 
     if event == "PJSON":
         print_to_json()
